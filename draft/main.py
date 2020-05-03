@@ -37,34 +37,45 @@ class GROUP():
         return self.num_item
 
     def __storage_items__(self):
-        file = codecs.open(osp.join('dataset', self.group_name,'group_data.txt'), 'w')
-        for item in self.item_list:
-            file.write('^'.join(item.attr_value))
-            file.write('\n')
-        print("the update of items is finished")
+        if not os.path.exists(osp.join('database', self.group_name)):
+            os.mkdir(osp.join('database', self.group_name))
+        try:
+            with open(osp.join('database', self.group_name,'group_data.txt'),'w') as file:
+                for item in self.item_list:
+                    file.write('^'.join(item.attr_value))
+                    file.write('\n')
+                print("the update of items is finished")
+        except:
+            print("创建文件失败！")
 
     def __load_data__(self):
         try:
-            group_data_file = codecs.open(osp.join('database',self.group_name,'group_data.txt'),'r','utf-8')
-            group_data =group_data_file.readlines()
-            for line in group_data:
-                attr_values = line.strip().split('^') #指定一个特殊的分割符号。
-                if len(self.attributes) != len(attr_values):
-                    print("the item and values of the attribute are not matched, creating item failed!")
-                else:
-                    self.item_list.append(ITEM(self.attributes,attr_values))
-            self.__update_len_item()
+            with open(osp.join('database',self.group_name,'group_data.txt'),'r') as group_data_file:
+                group_data =group_data_file.readlines()
+                for line in group_data:
+                    attr_values = line.strip().split('^') #指定一个特殊的分割符号。
+                    if len(self.attributes) != len(attr_values):
+                        print("the item and values of the attribute are not matched, creating item failed!")
+                    else:
+                        self.item_list.append(ITEM(self.attributes,attr_values))
+                self.__update_len_item()
         except:
             print("the database of {} is empty!".format(self.group_name))
 
     def add_item(self):
-        print("please input the value one by one, if not value, enter ' '")
+        print("please raw_input the value one by one, if not value, enter ' '")
         attr_value = []
         for attr in self.attributes:
-            value = input(attr)
+            value = raw_input(str(attr)+'：')
             attr_value.append(value)
         self.item_list.append(ITEM(self.attributes,attr_value))
         self.__storage_items__()
+
+    def show_info(self):
+        print('-'*10+self.group_name+'-'*10)
+        print("\t\t".join(self.attributes))
+        for item in self.item_list:
+            print('\t\t'.join(item.attr_value))
 
 
 class WARDROBE():
@@ -77,16 +88,16 @@ class WARDROBE():
         return self.num_group
 
     def __storage_group_(self):
-        file = codecs.open(osp.join('dataset','group_info.txt'),'w')
-        for group in self.group_list:
-            file.write(group.group_name+'^')
-            file.write('^'.join(group.attributes))
-            file.write('\n')
-        print("the update of group is finished")
+        with  open(osp.join('database','group_info.txt'),'w') as file:
+            for group in self.group_list:
+                file.write(group.group_name+'^')
+                file.write('^'.join(group.attributes))
+                file.write('\n')
+            print("the update of group is finished")
 
     def __load_groups__(self):
         try:
-            group_file = codecs.open(osp.join('database','group_info.txt'),'r','utf-8')
+            group_file = open(osp.join('database','group_info.txt'),'r')
             group_info = group_file.readlines() #第一项是 group_name ，后面是属性
             for line in group_info:
                 data = line.strip().split('^')
@@ -102,16 +113,18 @@ class WARDROBE():
 
     def __add_group__(self,group_name,group_attr):
         self.group_list.append(GROUP(group_name, group_attr))
-        print('group {} is created successfully'.format(group_name))
         self.__update_len_group__()
         self.__storage_group_()
+        print('group {} is created successfully'.format(group_name))
 
-    def F_add_group(self,group_name,group_attr):
+    def F_add_group(self):
+        group_name = raw_input('please raw_input group name:')
+        group_attr = raw_input('please raw_input group attribute with " " as division:').split()
         if group_name in self.get_group_name_list():
             print('the group named {} is exsisted.'.format(group_name))
         else:
             self.__add_group__(group_name,group_attr)
-            order = input('would you want add items for it? [y/n]')
+            order = raw_input('would you want add items for it? [y/n]')
             if order == 'y':
                 self.F_add_item_for_group(group_name)
 
@@ -122,17 +135,34 @@ class WARDROBE():
 
 
 
-    def F_add_item_for_group(self,group_name):
+    def F_add_item_for_group(self,group_name=None):
+        group_name = raw_input('please raw_input group name:') if group_name==None else group_name
         if group_name not in self.get_group_name_list():
             print('the group named {} is not exsisted'.format(group_name))
         while(True):
             self.__add_item__(group_name)
-            order = input('would you want add item continue? [y/n]')
+            order = raw_input('would you want add item continue? [y/n]:')
             if order == 'n':
                 break
 
+    def F_show_info(self):
+        for group in self.group_list:
+            group.show_info()
+
 if __name__=='__main__':
     wardrobe = WARDROBE()
+    while(True):
+        order = raw_input('raw_input 1 for show, 2 for add group, 3 for get item, 0 to exit:')
+        if order == '1':
+            wardrobe.F_show_info()
+        elif order ==  '2':
+            wardrobe.F_add_group()
+        elif order == '3':
+            wardrobe.F_add_item_for_group()
+        elif order == '0':
+            break
+        else:
+            print('raw_input error!')
     # 主要考虑增加和查看功能
 
 
